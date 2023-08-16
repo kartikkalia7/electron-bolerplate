@@ -9,9 +9,17 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  shell,
+  ipcMain,
+  DesktopCapturerSource,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import fs from 'fs';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -24,9 +32,37 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const saveImage = async (source: DesktopCapturerSource) => {
+  // const source = sources[i];
+  console.log(source.name);
+  // console.log(sources.map((each) => each.name));
+  if (mainWindow) {
+    console.log(source, 'Electron1');
 
+    // const image = await mainWindow.webContents.capturePage(undefined, {
+    //   stayHidden: true,
+    // });
+    if (!source.thumbnail.isEmpty()) {
+      const pathBuffer = source.thumbnail.toPNG();
+      const filePath = path.join('images', `${source.name}.png`);
+      fs.writeFileSync(filePath, pathBuffer);
+      console.log('Screenshot saved to:', filePath);
+    }
+  }
+};
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
+
+  //   console.log('uuuu');
+  desktopCapturer
+    .getSources({ types: ['screen', 'window'] })
+    .then(async (sources) => {
+      // const source = sources[0];
+      console.log(sources);
+      await Promise.allSettled(sources.map((each) => saveImage(each)));
+    })
+    .catch((err) => console.log(err, 'ooo'));
+
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
@@ -131,6 +167,7 @@ app
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
+
       if (mainWindow === null) createWindow();
     });
   })

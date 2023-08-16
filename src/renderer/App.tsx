@@ -22,6 +22,19 @@ function Hello() {
             Read our docs
           </button>
         </a>
+
+        <button
+          type="button"
+          onClick={() => {
+            window.electron.ipcRenderer.sendMessage('ipc-example', ['ping']);
+          }}
+        >
+          <span role="img" aria-label="books">
+            📚
+          </span>
+          trigger
+        </button>
+
         <a
           href="https://github.com/sponsors/electron-react-boilerplate"
           target="_blank"
